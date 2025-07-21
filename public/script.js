@@ -154,6 +154,13 @@ socket.on("user list", (users) => {
   });
 });
 
+// Hide all users modal when clicking outside (optional UX)
+allUsersModal.addEventListener("click", (e) => {
+  if (e.target === allUsersModal) {
+    allUsersModal.style.display = "none";
+  }
+});
+
 window.onload = () => {
   input.focus();
 };
