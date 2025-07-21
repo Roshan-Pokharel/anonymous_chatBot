@@ -168,14 +168,24 @@ showUsersBtn.onclick = () => {
     allUsersList.appendChild(countDiv);
 
     latestUsers.forEach((user) => {
+      if (user.id === myId) return;
       const div = document.createElement("div");
       div.className = "user";
-      div.innerHTML = `<span style="color:${getNameColor(
-        user.gender
-      )};font-weight:600;">
+      div.innerHTML =
+        `<span style="color:${getNameColor(user.gender)};font-weight:600;">
         ${user.name} ${getGenderSymbol(user.gender)}${
-        user.age ? " · " + user.age : ""
-      }</span>`;
+          user.age ? " · " + user.age : ""
+        }</span>` +
+        (unreadPrivate[user.id] ? '<span class="red-dot"></span>' : "");
+      div.onclick = () => {
+        currentRoom = [myId, user.id].sort().join("-");
+        roomTitle.textContent = `🔒 Chat with ${user.name}`;
+        messages.innerHTML = "";
+        socket.emit("join room", currentRoom);
+        unreadPrivate[user.id] = false;
+        updateUserList();
+        allUsersModal.style.display = "none";
+      };
       allUsersList.appendChild(div);
     });
     allUsersModal.style.display = "flex";
