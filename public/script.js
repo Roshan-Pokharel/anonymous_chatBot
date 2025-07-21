@@ -111,6 +111,13 @@ socket.on("user list", (users) => {
     // Show all users modal on mobile
     if (window.innerWidth <= 768) {
       allUsersList.innerHTML = "";
+      // Show count at the top
+      const countDiv = document.createElement("div");
+      countDiv.style =
+        "text-align:center;margin-bottom:8px;color:#4f46e5;font-weight:600;";
+      countDiv.textContent = `Online Users: ${latestUsers.length}`;
+      allUsersList.appendChild(countDiv);
+
       latestUsers.forEach((user) => {
         const div = document.createElement("div");
         div.className = "user";
