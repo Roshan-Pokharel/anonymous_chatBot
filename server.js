@@ -22,6 +22,14 @@ setInterval(pruneMessages, 60 * 1000);
 
 io.on("connection", (socket) => {
   socket.on("user info", ({ nickname, gender, age }) => {
+    // Check for duplicate nickname
+    const taken = Object.values(users).some(
+      (u) => u.name.toLowerCase() === nickname.trim().toLowerCase()
+    );
+    if (taken) {
+      socket.emit("nickname taken");
+      return;
+    }
     users[socket.id] = {
       name: nickname || "Guest",
       gender: gender || "male",

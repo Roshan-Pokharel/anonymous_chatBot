@@ -52,6 +52,14 @@ function showUserModal() {
   };
 }
 
+// Unique nickname error handler
+socket.on("nickname taken", () => {
+  nicknameInput.style.borderColor = "#e11d48";
+  nicknameInput.value = "";
+  nicknameInput.placeholder = "Nickname already taken!";
+  nicknameInput.focus();
+});
+
 socket.on("connect", () => {
   myId = socket.id;
   showUserModal();
