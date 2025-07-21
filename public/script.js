@@ -39,7 +39,6 @@ function showUserModal() {
       return;
     }
     if (!age || isNaN(age) || age < 18 || age > 99) {
-      // Age requirement is now 18+
       ageInput.focus();
       ageInput.style.borderColor = "#e75480";
       return;
@@ -81,32 +80,41 @@ function getNameColor(gender) {
   return gender === "female" ? "#e75480" : "#3b82f6";
 }
 
+// Add message to chat
+function addMessage(msg) {
+  const item = document.createElement("div");
+  item.classList.add("msg");
+  if (msg.id && msg.id === myId) {
+    item.classList.add("me");
+  } else {
+    item.classList.add("other");
+  }
+  item.innerHTML = `
+    <div class="bubble">
+      <span style="color:${getNameColor(msg.gender)};font-weight:600;">
+        ${msg.name} ${getGenderSymbol(msg.gender)}${
+    msg.age ? " · " + msg.age : ""
+  }:</span> ${msg.text}
+    </div>
+  `;
+  messages.appendChild(item);
+  messages.scrollTop = messages.scrollHeight;
+}
+
 // Message handler with unread notification logic
 socket.on("chat message", (msg) => {
-  // If it's a private message and not in currentRoom, mark as unread
-  if (msg.room !== "public" && msg.room !== currentRoom && msg.id !== myId) {
-    const otherId = msg.id === myId ? msg.to : msg.id;
+  // If it's a private message and I'm not in that private room, mark as unread
+  if (
+    msg.room !== "public" &&
+    currentRoom !== msg.room &&
+    msg.to === myId // Only mark as unread if I'm the recipient
+  ) {
+    const otherId = msg.id;
     unreadPrivate[otherId] = true;
     updateUserList();
   }
   if (msg.room === currentRoom) {
-    const item = document.createElement("div");
-    item.classList.add("msg");
-    if (msg.id && msg.id === myId) {
-      item.classList.add("me");
-    } else {
-      item.classList.add("other");
-    }
-    item.innerHTML = `
-      <div class="bubble">
-        <span style="color:${getNameColor(msg.gender)};font-weight:600;">
-          ${msg.name} ${getGenderSymbol(msg.gender)}${
-      msg.age ? " · " + msg.age : ""
-    }:</span> ${msg.text}
-      </div>
-    `;
-    messages.appendChild(item);
-    messages.scrollTop = messages.scrollHeight;
+    addMessage(msg);
     // Clear unread if in private room
     if (msg.room !== "public") {
       const otherId = msg.id === myId ? msg.to : msg.id;
@@ -114,6 +122,12 @@ socket.on("chat message", (msg) => {
       updateUserList();
     }
   }
+});
+
+// When joining a room, load its history
+socket.on("room history", (msgs) => {
+  messages.innerHTML = "";
+  msgs.forEach(addMessage);
 });
 
 // User list rendering with red dot for unread private messages
