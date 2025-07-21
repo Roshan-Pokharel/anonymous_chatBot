@@ -1,9 +1,11 @@
+// filepath: c:\Users\rosha\anonymous_chatBot\public\script.js
 const socket = io();
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const messages = document.getElementById("messages");
 const userList = document.getElementById("userList");
 const roomTitle = document.getElementById("roomTitle");
+const showUsersBtn = document.getElementById("showUsersBtn");
 
 // Modal elements
 const userModal = document.getElementById("userModal");
@@ -104,42 +106,6 @@ socket.on("user list", (users) => {
   latestUsers = users;
   userList.innerHTML = "";
 
-  const publicBtn = document.createElement("div");
-  publicBtn.className = "user";
-  publicBtn.textContent = "🌐 Public Room";
-  publicBtn.onclick = () => {
-    // Show all users modal on mobile
-    if (window.innerWidth <= 768) {
-      allUsersList.innerHTML = "";
-      // Show count at the top
-      const countDiv = document.createElement("div");
-      countDiv.style =
-        "text-align:center;margin-bottom:8px;color:#4f46e5;font-weight:600;";
-      countDiv.textContent = `Online Users: ${latestUsers.length}`;
-      allUsersList.appendChild(countDiv);
-
-      latestUsers.forEach((user) => {
-        const div = document.createElement("div");
-        div.className = "user";
-        div.innerHTML = `<span style="color:${getNameColor(
-          user.gender
-        )};font-weight:600;">
-          ${user.name} ${getGenderSymbol(user.gender)}${
-          user.age ? " · " + user.age : ""
-        }</span>`;
-        allUsersList.appendChild(div);
-      });
-      allUsersModal.style.display = "flex";
-      return;
-    }
-    // Normal public room logic for desktop
-    currentRoom = "public";
-    roomTitle.textContent = "🌐 Public Chat";
-    messages.innerHTML = "";
-    socket.emit("join room", currentRoom);
-  };
-  userList.appendChild(publicBtn);
-
   users.forEach((user) => {
     const div = document.createElement("div");
     div.className = "user";
@@ -160,6 +126,31 @@ socket.on("user list", (users) => {
     userList.appendChild(div);
   });
 });
+
+// Show online users modal when clicking "Users" button (mobile)
+showUsersBtn.onclick = () => {
+  if (window.innerWidth <= 768) {
+    allUsersList.innerHTML = "";
+    const countDiv = document.createElement("div");
+    countDiv.style =
+      "text-align:center;margin-bottom:8px;color:#4f46e5;font-weight:600;";
+    countDiv.textContent = `Online Users: ${latestUsers.length}`;
+    allUsersList.appendChild(countDiv);
+
+    latestUsers.forEach((user) => {
+      const div = document.createElement("div");
+      div.className = "user";
+      div.innerHTML = `<span style="color:${getNameColor(
+        user.gender
+      )};font-weight:600;">
+        ${user.name} ${getGenderSymbol(user.gender)}${
+        user.age ? " · " + user.age : ""
+      }</span>`;
+      allUsersList.appendChild(div);
+    });
+    allUsersModal.style.display = "flex";
+  }
+};
 
 // Hide all users modal when clicking outside (optional UX)
 allUsersModal.addEventListener("click", (e) => {
