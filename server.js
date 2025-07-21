@@ -38,6 +38,11 @@ io.on("connection", (socket) => {
       text,
       room,
     };
+    // If private, add 'to' field for notification
+    if (room !== "public") {
+      const ids = room.split("-");
+      msg.to = ids.find((id) => id !== socket.id);
+    }
     io.to(room).emit("chat message", msg);
   });
 

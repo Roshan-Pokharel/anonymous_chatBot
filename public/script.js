@@ -1,4 +1,4 @@
-// filepath: c:\Users\rosha\anonymous_chatBot\public\script.js
+\public\script.js
 const socket = io();
 const form = document.getElementById("form");
 const input = document.getElementById("input");
@@ -17,6 +17,7 @@ const ageInput = document.getElementById("ageInput");
 const allUsersModal = document.getElementById("allUsersModal");
 const allUsersList = document.getElementById("allUsersList");
 let latestUsers = [];
+let unreadPrivate = {}; // Track unread private messages
 
 let currentRoom = "public";
 let myId = null;
@@ -80,7 +81,14 @@ function getNameColor(gender) {
   return gender === "female" ? "#e75480" : "#3b82f6";
 }
 
+// Message handler with unread notification logic
 socket.on("chat message", (msg) => {
+  // If it's a private message and not in currentRoom, mark as unread
+  if (msg.room !== "public" && msg.room !== currentRoom && msg.id !== myId) {
+    const otherId = msg.id === myId ? msg.to : msg.id;
+    unreadPrivate[otherId] = true;
+    updateUserList();
+  }
   if (msg.room === currentRoom) {
     const item = document.createElement("div");
     item.classList.add("msg");
@@ -92,40 +100,57 @@ socket.on("chat message", (msg) => {
     item.innerHTML = `
       <div class="bubble">
         <span style="color:${getNameColor(msg.gender)};font-weight:600;">
-          ${msg.name} ${getGenderSymbol(msg.gender)}${
-      msg.age ? " · " + msg.age : ""
-    }:</span> ${msg.text}
+          ${msg.name} ${getGenderSymbol(msg.gender)}${msg.age ? " · " + msg.age : ""}:</span> ${msg.text}
       </div>
     `;
     messages.appendChild(item);
-    // Always scroll to the latest message
     messages.scrollTop = messages.scrollHeight;
+    // Clear unread if in private room
+    if (msg.room !== "public") {
+      const otherId = msg.id === myId ? msg.to : msg.id;
+      unreadPrivate[otherId] = false;
+      updateUserList();
+    }
   }
 });
 
-socket.on("user list", (users) => {
-  latestUsers = users;
+// User list rendering with red dot for unread private messages
+function updateUserList() {
   userList.innerHTML = "";
+  // Public room button
+  const publicBtn = document.createElement("div");
+  publicBtn.className = "user";
+  publicBtn.textContent = "🌐 Public Room";
+  publicBtn.onclick = () => {
+    currentRoom = "public";
+    roomTitle.textContent = "🌐 Public Chat";
+    messages.innerHTML = "";
+    socket.emit("join room", currentRoom);
+  };
+  userList.appendChild(publicBtn);
 
-  users.forEach((user) => {
+  latestUsers.forEach((user) => {
+    if (user.id === myId) return;
     const div = document.createElement("div");
     div.className = "user";
-    div.innerHTML = `<span style="color:${getNameColor(
-      user.gender
-    )};font-weight:600;">
-      ${user.name} ${getGenderSymbol(user.gender)}${
-      user.age ? " · " + user.age : ""
-    }</span>`;
+    div.innerHTML = `<span style="color:${getNameColor(user.gender)};font-weight:600;">
+      ${user.name} ${getGenderSymbol(user.gender)}${user.age ? " · " + user.age : ""}</span>` +
+      (unreadPrivate[user.id] ? '<span class="red-dot"></span>' : "");
     div.onclick = () => {
-      if (user.id !== myId) {
-        currentRoom = [myId, user.id].sort().join("-");
-        roomTitle.textContent = `🔒 Chat with ${user.name}`;
-        messages.innerHTML = "";
-        socket.emit("join room", currentRoom);
-      }
+      currentRoom = [myId, user.id].sort().join("-");
+      roomTitle.textContent = `🔒 Chat with ${user.name}`;
+      messages.innerHTML = "";
+      socket.emit("join room", currentRoom);
+      unreadPrivate[user.id] = false;
+      updateUserList();
     };
     userList.appendChild(div);
   });
+}
+
+socket.on("user list", (users) => {
+  latestUsers = users;
+  updateUserList();
 });
 
 // Show online users modal when clicking "Users" button (mobile)
@@ -133,20 +158,15 @@ showUsersBtn.onclick = () => {
   if (window.innerWidth <= 768) {
     allUsersList.innerHTML = "";
     const countDiv = document.createElement("div");
-    countDiv.style =
-      "text-align:center;margin-bottom:8px;color:#4f46e5;font-weight:600;";
+    countDiv.style = "text-align:center;margin-bottom:8px;color:#4f46e5;font-weight:600;";
     countDiv.textContent = `Online Users: ${latestUsers.length}`;
     allUsersList.appendChild(countDiv);
 
     latestUsers.forEach((user) => {
       const div = document.createElement("div");
       div.className = "user";
-      div.innerHTML = `<span style="color:${getNameColor(
-        user.gender
-      )};font-weight:600;">
-        ${user.name} ${getGenderSymbol(user.gender)}${
-        user.age ? " · " + user.age : ""
-      }</span>`;
+      div.innerHTML = `<span style="color:${getNameColor(user.gender)};font-weight:600;">
+        ${user.name} ${getGenderSymbol(user.gender)}${user.age ? " · " + user.age : ""}</span>`;
       allUsersList.appendChild(div);
     });
     allUsersModal.style.display = "flex";
