@@ -9,14 +9,12 @@ app.use(express.static("public"));
 let users = {};
 
 io.on("connection", (socket) => {
-  // Wait for user info from client
   socket.on("user info", ({ nickname, gender, age }) => {
     users[socket.id] = {
       name: nickname || "Guest",
       gender: gender || "male",
       age: age || "",
     };
-    // Send updated user list
     io.emit(
       "user list",
       Object.keys(users).map((id) => ({
@@ -28,9 +26,8 @@ io.on("connection", (socket) => {
     );
   });
 
-  socket.join("public"); // Default room
+  socket.join("public");
 
-  // Handle chat messages
   socket.on("chat message", ({ room, text }) => {
     const user = users[socket.id] || { name: "Guest", gender: "male", age: "" };
     const msg = {
@@ -44,12 +41,10 @@ io.on("connection", (socket) => {
     io.to(room).emit("chat message", msg);
   });
 
-  // Join a specific room
   socket.on("join room", (roomId) => {
     socket.join(roomId);
   });
 
-  // Disconnect
   socket.on("disconnect", () => {
     delete users[socket.id];
     io.emit(

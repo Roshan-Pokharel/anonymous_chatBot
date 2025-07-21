@@ -1,3 +1,4 @@
+sha\anonymous_chatBot\public\script.js
 const socket = io();
 const form = document.getElementById("form");
 const input = document.getElementById("input");
@@ -55,8 +56,15 @@ form.addEventListener("submit", (e) => {
   if (input.value) {
     socket.emit("chat message", { room: currentRoom, text: input.value });
     input.value = "";
-    setTimeout(() => input.focus(), 10); // Keep focus after sending
+    setTimeout(() => input.focus(), 10);
   }
+});
+
+// Always scroll messages to bottom on input focus (mobile fix)
+input.addEventListener("focus", () => {
+  setTimeout(() => {
+    messages.scrollTop = messages.scrollHeight;
+  }, 100);
 });
 
 function getGenderSymbol(gender) {
@@ -66,7 +74,6 @@ function getNameColor(gender) {
   return gender === "female" ? "#e75480" : "#3b82f6";
 }
 
-// Message bubble rendering
 socket.on("chat message", (msg) => {
   if (msg.room === currentRoom) {
     const item = document.createElement("div");
@@ -79,9 +86,7 @@ socket.on("chat message", (msg) => {
     item.innerHTML = `
       <div class="bubble">
         <span style="color:${getNameColor(msg.gender)};font-weight:600;">
-          ${msg.name} ${getGenderSymbol(msg.gender)}${
-      msg.age ? " · " + msg.age : ""
-    }:</span> ${msg.text}
+          ${msg.name} ${getGenderSymbol(msg.gender)}${msg.age ? " · " + msg.age : ""}:</span> ${msg.text}
       </div>
     `;
     messages.appendChild(item);
@@ -106,12 +111,8 @@ socket.on("user list", (users) => {
   users.forEach((user) => {
     const div = document.createElement("div");
     div.className = "user";
-    div.innerHTML = `<span style="color:${getNameColor(
-      user.gender
-    )};font-weight:600;">
-      ${user.name} ${getGenderSymbol(user.gender)}${
-      user.age ? " · " + user.age : ""
-    }</span>`;
+    div.innerHTML = `<span style="color:${getNameColor(user.gender)};font-weight:600;">
+      ${user.name} ${getGenderSymbol(user.gender)}${user.age ? " · " + user.age : ""}</span>`;
     div.onclick = () => {
       if (user.id !== myId) {
         currentRoom = [myId, user.id].sort().join("-");
@@ -124,7 +125,6 @@ socket.on("user list", (users) => {
   });
 });
 
-// Optional: Focus input on page load
 window.onload = () => {
   input.focus();
 };
