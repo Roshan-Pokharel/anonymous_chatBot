@@ -38,7 +38,8 @@ function showUserModal() {
       nicknameInput.focus();
       return;
     }
-    if (!age || isNaN(age) || age < 10 || age > 99) {
+    if (!age || isNaN(age) || age < 18 || age > 99) {
+      // Age requirement is now 18+
       ageInput.focus();
       ageInput.style.borderColor = "#e75480";
       return;
@@ -161,6 +162,22 @@ socket.on("user list", (users) => {
 showUsersBtn.onclick = () => {
   if (window.innerWidth <= 768) {
     allUsersList.innerHTML = "";
+
+    // Add Public Room button at the top of modal
+    const publicBtn = document.createElement("div");
+    publicBtn.className = "user";
+    publicBtn.style =
+      "background:#eef;padding:10px;border-radius:6px;margin-bottom:8px;cursor:pointer;text-align:center;";
+    publicBtn.textContent = "🌐 Public Room";
+    publicBtn.onclick = () => {
+      currentRoom = "public";
+      roomTitle.textContent = "🌐 Public Chat";
+      messages.innerHTML = "";
+      socket.emit("join room", currentRoom);
+      allUsersModal.style.display = "none";
+    };
+    allUsersList.appendChild(publicBtn);
+
     const countDiv = document.createElement("div");
     countDiv.style =
       "text-align:center;margin-bottom:8px;color:#4f46e5;font-weight:600;";
