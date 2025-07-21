@@ -1,4 +1,3 @@
-\public\script.js
 const socket = io();
 const form = document.getElementById("form");
 const input = document.getElementById("input");
@@ -100,7 +99,9 @@ socket.on("chat message", (msg) => {
     item.innerHTML = `
       <div class="bubble">
         <span style="color:${getNameColor(msg.gender)};font-weight:600;">
-          ${msg.name} ${getGenderSymbol(msg.gender)}${msg.age ? " · " + msg.age : ""}:</span> ${msg.text}
+          ${msg.name} ${getGenderSymbol(msg.gender)}${
+      msg.age ? " · " + msg.age : ""
+    }:</span> ${msg.text}
       </div>
     `;
     messages.appendChild(item);
@@ -133,8 +134,11 @@ function updateUserList() {
     if (user.id === myId) return;
     const div = document.createElement("div");
     div.className = "user";
-    div.innerHTML = `<span style="color:${getNameColor(user.gender)};font-weight:600;">
-      ${user.name} ${getGenderSymbol(user.gender)}${user.age ? " · " + user.age : ""}</span>` +
+    div.innerHTML =
+      `<span style="color:${getNameColor(user.gender)};font-weight:600;">
+      ${user.name} ${getGenderSymbol(user.gender)}${
+        user.age ? " · " + user.age : ""
+      }</span>` +
       (unreadPrivate[user.id] ? '<span class="red-dot"></span>' : "");
     div.onclick = () => {
       currentRoom = [myId, user.id].sort().join("-");
@@ -158,15 +162,20 @@ showUsersBtn.onclick = () => {
   if (window.innerWidth <= 768) {
     allUsersList.innerHTML = "";
     const countDiv = document.createElement("div");
-    countDiv.style = "text-align:center;margin-bottom:8px;color:#4f46e5;font-weight:600;";
+    countDiv.style =
+      "text-align:center;margin-bottom:8px;color:#4f46e5;font-weight:600;";
     countDiv.textContent = `Online Users: ${latestUsers.length}`;
     allUsersList.appendChild(countDiv);
 
     latestUsers.forEach((user) => {
       const div = document.createElement("div");
       div.className = "user";
-      div.innerHTML = `<span style="color:${getNameColor(user.gender)};font-weight:600;">
-        ${user.name} ${getGenderSymbol(user.gender)}${user.age ? " · " + user.age : ""}</span>`;
+      div.innerHTML = `<span style="color:${getNameColor(
+        user.gender
+      )};font-weight:600;">
+        ${user.name} ${getGenderSymbol(user.gender)}${
+        user.age ? " · " + user.age : ""
+      }</span>`;
       allUsersList.appendChild(div);
     });
     allUsersModal.style.display = "flex";
