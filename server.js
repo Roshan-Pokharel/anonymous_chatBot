@@ -6,25 +6,34 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static("public"));
 
-let guestCount = 1;
 let users = {};
 
 io.on("connection", (socket) => {
-  const guestName = "Guest" + guestCount++;
-  users[socket.id] = guestName;
-
-  // Send the updated user list
-  io.emit(
-    "user list",
-    Object.keys(users).map((id) => ({ id, name: users[id] }))
-  );
+  // Wait for user info from client
+  socket.on("user info", ({ nickname, gender }) => {
+    users[socket.id] = {
+      name: nickname || "Guest",
+      gender: gender || "male",
+    };
+    // Send updated user list
+    io.emit(
+      "user list",
+      Object.keys(users).map((id) => ({
+        id,
+        name: users[id].name,
+        gender: users[id].gender,
+      }))
+    );
+  });
 
   socket.join("public"); // Default room
 
   // Handle chat messages
   socket.on("chat message", ({ room, text }) => {
+    const user = users[socket.id] || { name: "Guest", gender: "male" };
     const msg = {
-      name: users[socket.id],
+      name: user.name,
+      gender: user.gender,
       text,
       room,
     };
@@ -41,7 +50,11 @@ io.on("connection", (socket) => {
     delete users[socket.id];
     io.emit(
       "user list",
-      Object.keys(users).map((id) => ({ id, name: users[id] }))
+      Object.keys(users).map((id) => ({
+        id,
+        name: users[id]?.name,
+        gender: users[id]?.gender,
+      }))
     );
   });
 });

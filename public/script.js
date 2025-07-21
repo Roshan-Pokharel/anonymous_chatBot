@@ -7,9 +7,27 @@ const roomTitle = document.getElementById("roomTitle");
 
 let currentRoom = "public";
 let myId = null;
+let myGender = "male";
+
+// Prompt for nickname and gender
+function askUserInfo() {
+  let nickname = "";
+  while (!nickname) {
+    nickname = prompt("Enter your nickname (visible to others):", "");
+    if (nickname === null) nickname = ""; // Prevent cancel
+  }
+  let gender = "";
+  while (!["male", "female"].includes(gender)) {
+    gender = prompt("Enter your gender (male/female):", "").toLowerCase();
+    if (gender === null) gender = "male";
+  }
+  myGender = gender;
+  socket.emit("user info", { nickname, gender });
+}
 
 socket.on("connect", () => {
   myId = socket.id;
+  askUserInfo();
   socket.emit("join room", "public");
 });
 
@@ -18,14 +36,25 @@ form.addEventListener("submit", (e) => {
   if (input.value) {
     socket.emit("chat message", { room: currentRoom, text: input.value });
     input.value = "";
+    setTimeout(() => input.focus(), 10); // Keep focus after sending
   }
 });
+
+function getGenderSymbol(gender) {
+  return gender === "female" ? "♀" : "♂";
+}
+function getNameColor(gender) {
+  return gender === "female" ? "#e75480" : "#3b82f6";
+}
 
 socket.on("chat message", (msg) => {
   if (msg.room === currentRoom) {
     const item = document.createElement("div");
     item.classList.add("msg");
-    item.innerHTML = `<span>${msg.name}:</span> ${msg.text}`;
+    item.innerHTML = `<span style="color:${getNameColor(
+      msg.gender
+    )};font-weight:600;">
+      ${msg.name} ${getGenderSymbol(msg.gender)}:</span> ${msg.text}`;
     messages.appendChild(item);
     messages.scrollTop = messages.scrollHeight;
   }
@@ -48,7 +77,10 @@ socket.on("user list", (users) => {
   users.forEach((user) => {
     const div = document.createElement("div");
     div.className = "user";
-    div.textContent = user.name;
+    div.innerHTML = `<span style="color:${getNameColor(
+      user.gender
+    )};font-weight:600;">
+      ${user.name} ${getGenderSymbol(user.gender)}</span>`;
     div.onclick = () => {
       if (user.id !== myId) {
         currentRoom = [myId, user.id].sort().join("-");
@@ -60,3 +92,6 @@ socket.on("user list", (users) => {
     userList.appendChild(div);
   });
 });
+
+// Optional: Focus input on page load
+window.onload = () => input.focus();
