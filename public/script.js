@@ -11,6 +11,11 @@ const userForm = document.getElementById("userForm");
 const nicknameInput = document.getElementById("nicknameInput");
 const ageInput = document.getElementById("ageInput");
 
+// All users modal (for mobile)
+const allUsersModal = document.getElementById("allUsersModal");
+const allUsersList = document.getElementById("allUsersList");
+let latestUsers = [];
+
 let currentRoom = "public";
 let myId = null;
 let myGender = "male";
@@ -96,12 +101,31 @@ socket.on("chat message", (msg) => {
 });
 
 socket.on("user list", (users) => {
+  latestUsers = users;
   userList.innerHTML = "";
 
   const publicBtn = document.createElement("div");
   publicBtn.className = "user";
   publicBtn.textContent = "🌐 Public Room";
   publicBtn.onclick = () => {
+    // Show all users modal on mobile
+    if (window.innerWidth <= 768) {
+      allUsersList.innerHTML = "";
+      latestUsers.forEach((user) => {
+        const div = document.createElement("div");
+        div.className = "user";
+        div.innerHTML = `<span style="color:${getNameColor(
+          user.gender
+        )};font-weight:600;">
+          ${user.name} ${getGenderSymbol(user.gender)}${
+          user.age ? " · " + user.age : ""
+        }</span>`;
+        allUsersList.appendChild(div);
+      });
+      allUsersModal.style.display = "flex";
+      return;
+    }
+    // Normal public room logic for desktop
     currentRoom = "public";
     roomTitle.textContent = "🌐 Public Chat";
     messages.innerHTML = "";

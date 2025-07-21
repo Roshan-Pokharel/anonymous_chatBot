@@ -276,6 +276,21 @@
         <button type="submit">Start Chatting 🚀</button>
       </form>
     </div>
+    <!-- Modal for all online users (mobile) -->
+    <div id="allUsersModal" class="modal" style="display: none">
+      <div class="modal-content" style="max-height: 70vh; overflow-y: auto">
+        <h3 style="margin-bottom: 12px; color: #4f46e5; text-align: center">
+          Online Users
+        </h3>
+        <div id="allUsersList"></div>
+        <button
+          onclick="document.getElementById('allUsersModal').style.display='none';"
+          style="margin-top: 16px"
+        >
+          Close
+        </button>
+      </div>
+    </div>
     <div class="container">
       <div id="sidebar">
         <h3 style="margin-bottom: 12px">👥 Users</h3>
