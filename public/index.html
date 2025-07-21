@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Anon Chat</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        display: flex;
+        height: 100vh;
+        background: #f9fafb;
+        color: #333;
+      }
+      #sidebar {
+        width: 240px;
+        background: #ffffff;
+        border-right: 1px solid #e5e7eb;
+        padding: 20px;
+        overflow-y: auto;
+      }
+      #chat {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+      }
+      h2,
+      h3 {
+        margin-bottom: 16px;
+        font-weight: 600;
+      }
+      #messages {
+        flex: 1;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        padding: 16px;
+        border-radius: 8px;
+        overflow-y: scroll;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.04);
+      }
+      .msg {
+        margin-bottom: 12px;
+      }
+      .msg span {
+        font-weight: 600;
+        color: #111827;
+      }
+      #form {
+        display: flex;
+        margin-top: 16px;
+        gap: 12px;
+      }
+      #input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 16px;
+        background: #f3f4f6;
+      }
+      button {
+        padding: 12px 20px;
+        background: #4f46e5;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.2s ease;
+      }
+      button:hover {
+        background: #4338ca;
+      }
+      .user {
+        background: #f3f4f6;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      .user:hover {
+        background: #e5e7eb;
+      }
+      .user.active {
+        background: #dbeafe;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="sidebar">
+      <h3>👥 Online Users</h3>
+      <div id="userList"></div>
+    </div>
+
+    <div id="chat">
+      <h2 id="roomTitle">🌐 Public Chat</h2>
+      <div id="messages"></div>
+      <form id="form">
+        <input
+          id="input"
+          autocomplete="off"
+          placeholder="Type your message..."
+        />
+        <button>Send</button>
+      </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
