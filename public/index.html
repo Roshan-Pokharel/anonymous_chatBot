@@ -2,38 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Anon Chat</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
-      rel="stylesheet"
-    />
+    <title>Anonymous ChatBot</title>
     <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
       body {
-        font-family: "Inter", sans-serif;
-        background: #f9fafb;
-        color: #333;
+        margin: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #f3f4f6;
+        color: #222;
         display: flex;
         flex-direction: column;
         height: 100vh;
       }
-
       .container {
         flex: 1;
         display: flex;
         overflow: hidden;
+        height: 100vh;
       }
-
       #sidebar {
         width: 240px;
         background: #fff;
@@ -41,20 +30,17 @@
         padding: 16px;
         overflow-y: auto;
       }
-
       #chat {
         flex: 1;
         display: flex;
         flex-direction: column;
         padding: 16px;
       }
-
       #roomTitle {
         font-size: 1.2rem;
         font-weight: 600;
         margin-bottom: 12px;
       }
-
       #messages {
         flex: 1;
         overflow-y: auto;
@@ -63,22 +49,19 @@
         border: 1px solid #e5e7eb;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        margin-bottom: 8px;
       }
-
       .msg {
         margin-bottom: 10px;
       }
-
       .msg span {
         font-weight: 600;
       }
-
       #form {
         display: flex;
         margin-top: 12px;
         gap: 10px;
       }
-
       #input {
         flex: 1;
         padding: 12px;
@@ -87,7 +70,6 @@
         border-radius: 6px;
         background: #f3f4f6;
       }
-
       button {
         padding: 12px 16px;
         background: #4f46e5;
@@ -96,30 +78,27 @@
         border-radius: 6px;
         font-weight: 600;
         cursor: pointer;
+        transition: background 0.2s;
       }
-
       button:hover {
         background: #4338ca;
       }
-
       .user {
         background: #f3f4f6;
         padding: 10px;
         border-radius: 6px;
         margin-bottom: 8px;
         cursor: pointer;
+        transition: background 0.2s;
       }
-
       .user:hover {
         background: #e5e7eb;
       }
-
       @media (max-width: 768px) {
         .container {
           flex-direction: column;
           height: 100vh;
         }
-
         #sidebar {
           width: 100%;
           border-right: none;
@@ -131,14 +110,12 @@
           max-height: 100px;
           overflow-x: auto;
         }
-
         .user {
           flex: 1 1 45%;
           text-align: center;
           min-width: 120px;
           margin-bottom: 0;
         }
-
         #chat {
           flex: 1;
           display: flex;
@@ -146,7 +123,6 @@
           padding: 8px;
           min-height: 0;
         }
-
         #form {
           flex-direction: row;
           gap: 8px;
@@ -159,63 +135,136 @@
           box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
           z-index: 10;
         }
-
         #messages {
-          margin-bottom: 70px; /* space for input */
+          margin-bottom: 70px;
         }
-
         button {
           width: auto;
           min-width: 60px;
         }
       }
-
       @media (max-width: 480px) {
         .user {
           flex: 1 1 100%;
           min-width: 0;
         }
-
         #input {
-          font-size: 16px; /* Prevent mobile zoom */
+          font-size: 16px;
         }
-
         #roomTitle {
           font-size: 1rem;
         }
-
         #sidebar {
           max-height: 70px;
           padding: 4px;
         }
-
         #form {
           padding: 6px 4px 10px 4px;
         }
       }
-
-      /* Prevent input zoom on iOS */
       input[type="text"],
       input[type="search"],
       input[type="email"],
-      input[type="password"] {
+      input[type="password"],
+      input[type="number"] {
+        font-size: 16px;
+      }
+      /* Minimal modal styles */
+      .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(79, 70, 229, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-content {
+        background: #fff;
+        padding: 32px 24px;
+        border-radius: 14px;
+        box-shadow: 0 4px 24px rgba(79, 70, 229, 0.12);
+        min-width: 280px;
+        max-width: 92vw;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .modal-content input[type="text"],
+      .modal-content input[type="number"] {
+        outline: none;
+        transition: border-color 0.2s;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 10px;
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      .modal-content input:focus {
+        border-color: #4f46e5;
+      }
+      .modal-content button:hover {
+        background: #4338ca;
+      }
+      .gender-group {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        margin-bottom: 10px;
+      }
+      .gender-group label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
         font-size: 16px;
       }
     </style>
   </head>
   <body>
+    <!-- Modern Modal for Nickname, Age, Gender -->
+    <div id="userModal" class="modal">
+      <form id="userForm" class="modal-content">
+        <h2 style="margin-bottom: 18px; color: #4f46e5; text-align: center">
+          👤 Welcome! Set your profile
+        </h2>
+        <input type="text" id="nicknameInput" placeholder="Nickname" required />
+        <input
+          type="number"
+          id="ageInput"
+          placeholder="Age"
+          min="10"
+          max="99"
+          required
+        />
+        <div class="gender-group">
+          <label>
+            <input type="radio" name="gender" value="male" checked />
+            <span style="color: #3b82f6; font-weight: 600">♂ Male</span>
+          </label>
+          <label>
+            <input type="radio" name="gender" value="female" />
+            <span style="color: #e75480; font-weight: 600">♀ Female</span>
+          </label>
+        </div>
+        <button type="submit">Start Chatting 🚀</button>
+      </form>
+    </div>
     <div class="container">
       <div id="sidebar">
         <h3 style="margin-bottom: 12px">👥 Users</h3>
         <div id="userList"></div>
       </div>
-
       <div id="chat">
-        <h2 id="roomTitle">🌐 Public Chat</h2>
+        <div id="roomTitle">🌐 Public Chat</div>
         <div id="messages"></div>
-        <form id="form">
+        <form id="form" autocomplete="off">
           <input
             id="input"
+            type="text"
             placeholder="Type your message..."
             autocomplete="off"
           />
@@ -223,20 +272,7 @@
         </form>
       </div>
     </div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
   </body>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
-  <script>
-    // Keep focus in the input after sending
-    const form = document.getElementById("form");
-    const input = document.getElementById("input");
-    form.addEventListener("submit", function (e) {
-      setTimeout(() => input.focus(), 10);
-    });
-    // Optional: Focus input on page load
-    window.onload = () => input.focus();
-  </script>
 </html>

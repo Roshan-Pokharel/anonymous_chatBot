@@ -1,34 +1,42 @@
-const socket = io("https://anonymous-chatbot-ifps.onrender.com");
+const socket = io();
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const messages = document.getElementById("messages");
 const userList = document.getElementById("userList");
 const roomTitle = document.getElementById("roomTitle");
 
+// Modal elements
+const userModal = document.getElementById("userModal");
+const userForm = document.getElementById("userForm");
+const nicknameInput = document.getElementById("nicknameInput");
+
 let currentRoom = "public";
 let myId = null;
 let myGender = "male";
 
-// Prompt for nickname and gender
-function askUserInfo() {
-  let nickname = "";
-  while (!nickname) {
-    nickname = prompt("Enter your nickname (visible to others):", "");
-    if (nickname === null) nickname = ""; // Prevent cancel
-  }
-  let gender = "";
-  while (!["male", "female"].includes(gender)) {
-    gender = prompt("Enter your gender (male/female):", "").toLowerCase();
-    if (gender === null) gender = "male";
-  }
-  myGender = gender;
-  socket.emit("user info", { nickname, gender });
+// Show modal and handle form
+function showUserModal() {
+  userModal.style.display = "flex";
+  nicknameInput.focus();
+
+  userForm.onsubmit = function (e) {
+    e.preventDefault();
+    const nickname = nicknameInput.value.trim();
+    const gender = userForm.gender.value;
+    if (!nickname) {
+      nicknameInput.focus();
+      return;
+    }
+    myGender = gender;
+    socket.emit("user info", { nickname, gender });
+    userModal.style.display = "none";
+    socket.emit("join room", "public");
+  };
 }
 
 socket.on("connect", () => {
   myId = socket.id;
-  askUserInfo();
-  socket.emit("join room", "public");
+  showUserModal();
 });
 
 form.addEventListener("submit", (e) => {
@@ -94,4 +102,6 @@ socket.on("user list", (users) => {
 });
 
 // Optional: Focus input on page load
-window.onload = () => input.focus();
+window.onload = () => {
+  input.focus();
+};
