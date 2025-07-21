@@ -98,6 +98,7 @@ socket.on("chat message", (msg) => {
       </div>
     `;
     messages.appendChild(item);
+    // Always scroll to the latest message
     messages.scrollTop = messages.scrollHeight;
   }
 });
