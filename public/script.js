@@ -9,10 +9,13 @@ const roomTitle = document.getElementById("roomTitle");
 const userModal = document.getElementById("userModal");
 const userForm = document.getElementById("userForm");
 const nicknameInput = document.getElementById("nicknameInput");
+const ageInput = document.getElementById("ageInput");
 
 let currentRoom = "public";
 let myId = null;
 let myGender = "male";
+let myNickname = "";
+let myAge = null;
 
 // Show modal and handle form
 function showUserModal() {
@@ -23,12 +26,20 @@ function showUserModal() {
     e.preventDefault();
     const nickname = nicknameInput.value.trim();
     const gender = userForm.gender.value;
+    const age = ageInput.value.trim();
     if (!nickname) {
       nicknameInput.focus();
       return;
     }
+    if (!age || isNaN(age) || age < 10 || age > 99) {
+      ageInput.focus();
+      ageInput.style.borderColor = "#e75480";
+      return;
+    }
     myGender = gender;
-    socket.emit("user info", { nickname, gender });
+    myNickname = nickname;
+    myAge = age;
+    socket.emit("user info", { nickname, gender, age });
     userModal.style.display = "none";
     socket.emit("join room", "public");
   };
@@ -55,14 +66,24 @@ function getNameColor(gender) {
   return gender === "female" ? "#e75480" : "#3b82f6";
 }
 
+// Message bubble rendering
 socket.on("chat message", (msg) => {
   if (msg.room === currentRoom) {
     const item = document.createElement("div");
     item.classList.add("msg");
-    item.innerHTML = `<span style="color:${getNameColor(
-      msg.gender
-    )};font-weight:600;">
-      ${msg.name} ${getGenderSymbol(msg.gender)}:</span> ${msg.text}`;
+    if (msg.id && msg.id === myId) {
+      item.classList.add("me");
+    } else {
+      item.classList.add("other");
+    }
+    item.innerHTML = `
+      <div class="bubble">
+        <span style="color:${getNameColor(msg.gender)};font-weight:600;">
+          ${msg.name} ${getGenderSymbol(msg.gender)}${
+      msg.age ? " · " + msg.age : ""
+    }:</span> ${msg.text}
+      </div>
+    `;
     messages.appendChild(item);
     messages.scrollTop = messages.scrollHeight;
   }
@@ -88,7 +109,9 @@ socket.on("user list", (users) => {
     div.innerHTML = `<span style="color:${getNameColor(
       user.gender
     )};font-weight:600;">
-      ${user.name} ${getGenderSymbol(user.gender)}</span>`;
+      ${user.name} ${getGenderSymbol(user.gender)}${
+      user.age ? " · " + user.age : ""
+    }</span>`;
     div.onclick = () => {
       if (user.id !== myId) {
         currentRoom = [myId, user.id].sort().join("-");

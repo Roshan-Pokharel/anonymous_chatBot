@@ -10,10 +10,11 @@ let users = {};
 
 io.on("connection", (socket) => {
   // Wait for user info from client
-  socket.on("user info", ({ nickname, gender }) => {
+  socket.on("user info", ({ nickname, gender, age }) => {
     users[socket.id] = {
       name: nickname || "Guest",
       gender: gender || "male",
+      age: age || "",
     };
     // Send updated user list
     io.emit(
@@ -22,6 +23,7 @@ io.on("connection", (socket) => {
         id,
         name: users[id].name,
         gender: users[id].gender,
+        age: users[id].age,
       }))
     );
   });
@@ -30,10 +32,12 @@ io.on("connection", (socket) => {
 
   // Handle chat messages
   socket.on("chat message", ({ room, text }) => {
-    const user = users[socket.id] || { name: "Guest", gender: "male" };
+    const user = users[socket.id] || { name: "Guest", gender: "male", age: "" };
     const msg = {
+      id: socket.id,
       name: user.name,
       gender: user.gender,
+      age: user.age,
       text,
       room,
     };
@@ -54,6 +58,7 @@ io.on("connection", (socket) => {
         id,
         name: users[id]?.name,
         gender: users[id]?.gender,
+        age: users[id]?.age,
       }))
     );
   });
