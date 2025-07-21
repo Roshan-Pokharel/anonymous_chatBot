@@ -1,4 +1,3 @@
-sha\anonymous_chatBot\public\script.js
 const socket = io();
 const form = document.getElementById("form");
 const input = document.getElementById("input");
@@ -86,7 +85,9 @@ socket.on("chat message", (msg) => {
     item.innerHTML = `
       <div class="bubble">
         <span style="color:${getNameColor(msg.gender)};font-weight:600;">
-          ${msg.name} ${getGenderSymbol(msg.gender)}${msg.age ? " · " + msg.age : ""}:</span> ${msg.text}
+          ${msg.name} ${getGenderSymbol(msg.gender)}${
+      msg.age ? " · " + msg.age : ""
+    }:</span> ${msg.text}
       </div>
     `;
     messages.appendChild(item);
@@ -111,8 +112,12 @@ socket.on("user list", (users) => {
   users.forEach((user) => {
     const div = document.createElement("div");
     div.className = "user";
-    div.innerHTML = `<span style="color:${getNameColor(user.gender)};font-weight:600;">
-      ${user.name} ${getGenderSymbol(user.gender)}${user.age ? " · " + user.age : ""}</span>`;
+    div.innerHTML = `<span style="color:${getNameColor(
+      user.gender
+    )};font-weight:600;">
+      ${user.name} ${getGenderSymbol(user.gender)}${
+      user.age ? " · " + user.age : ""
+    }</span>`;
     div.onclick = () => {
       if (user.id !== myId) {
         currentRoom = [myId, user.id].sort().join("-");
