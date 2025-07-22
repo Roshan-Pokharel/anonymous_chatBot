@@ -22,9 +22,10 @@ let myGender = "male";
 let myNickname = "";
 let myAge = null;
 
-// Store initial viewport height to detect keyboard
-let initialViewportHeight = window.innerHeight;
-let isKeyboardOpen = false;
+// Store initial viewport height using visualViewport if available
+let initialViewportHeight = window.visualViewport
+  ? window.visualViewport.height
+  : window.innerHeight;
 
 function showUserModal() {
   userModal.style.display = "flex";
@@ -70,7 +71,8 @@ form.addEventListener("submit", (e) => {
   if (input.value) {
     socket.emit("chat message", { room: currentRoom, text: input.value });
     input.value = "";
-    input.focus(); // Keep focus on input for quick replies
+    // Keep focus on input for quick replies, and let keyboard handler do its work
+    input.focus();
   }
 });
 
@@ -135,7 +137,10 @@ socket.on("room history", (msgs) => {
   }, 150); // Small delay to allow rendering
 });
 
-// --- KEYBOARD HANDLING LOGIC ---
+// --- NEW KEYBOARD HANDLING LOGIC ---
+// Use visualViewport if available, otherwise fallback to window.innerHeight
+const viewport = window.visualViewport || window;
+
 const adjustChatPadding = () => {
   // Only apply this logic on smaller screens (mobile)
   if (window.innerWidth > 768) {
@@ -143,76 +148,76 @@ const adjustChatPadding = () => {
     return;
   }
 
-  const currentViewportHeight = window.innerHeight;
-  const keyboardHeightEstimate = initialViewportHeight - currentViewportHeight;
-  const formHeight = form.offsetHeight; // Get current height of the form
+  // Get current height of the form (which is fixed at the bottom)
+  const formHeight = form.offsetHeight;
 
-  // A small threshold to account for minor resizes not related to keyboard
-  const threshold = 100;
+  // Calculate the space taken by the keyboard
+  // visualViewport.height is the layout viewport height (excluding keyboard)
+  // window.innerHeight is often the full viewport height (including browser UI, but can be affected by keyboard)
+  // Using visualViewport.height is generally more reliable for keyboard detection.
+  const keyboardHeight = initialViewportHeight - viewport.height;
 
-  if (keyboardHeightEstimate > threshold) {
+  // A small threshold to distinguish keyboard from minor browser UI changes
+  const threshold = 50; // Minimum pixel change to consider it a keyboard
+
+  let dynamicPadding = 0;
+
+  if (keyboardHeight > threshold) {
     // Keyboard is likely open
-    isKeyboardOpen = true;
-    // Set padding-bottom of messages to clear the keyboard + form + a little extra
-    messages.style.paddingBottom = `${
-      keyboardHeightEstimate + formHeight + 10
-    }px`;
-    // Also scroll the input into view to ensure it's not hidden
-    input.scrollIntoView({ behavior: "smooth", block: "end" });
+    // We want the bottom of messages to be above the keyboard AND the input form
+    dynamicPadding = keyboardHeight + formHeight + 10; // Add a small buffer (10px)
+    // console.log(`Keyboard open. KB height: ${keyboardHeight}, Form height: ${formHeight}, Padding: ${dynamicPadding}`);
   } else {
     // Keyboard is likely closed
-    isKeyboardOpen = false;
-    // Reset padding-bottom. Add the original fixed form height + safe area.
-    // We assume the form's height on mobile is roughly 72px (from its padding in CSS) + safe area.
-    // This value must match the form's height in CSS when no keyboard is present.
-    const defaultFormBottomSpace = formHeight; // Use actual form height
-    const safeAreaBottom =
-      parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue(
-          "--sa-b",
-          "0"
-        )
-      ) || 0; // Fallback if env() not supported
-    messages.style.paddingBottom = `${
-      defaultFormBottomSpace + safeAreaBottom + 10
-    }px`; // Add a small buffer too
+    // Set padding to just clear the input form + safe area
+    const safeAreaBottom = window
+      .getComputedStyle(document.documentElement)
+      .getPropertyValue("env(safe-area-inset-bottom, 0px)")
+      .trim();
+    const safeAreaBottomPx = parseFloat(safeAreaBottom) || 0;
+    dynamicPadding = formHeight + safeAreaBottomPx + 10; // Add small buffer
+    // console.log(`Keyboard closed. Form height: ${formHeight}, Safe Area: ${safeAreaBottomPx}, Padding: ${dynamicPadding}`);
   }
+
+  messages.style.paddingBottom = `${dynamicPadding}px`;
   scrollToBottom(); // Always scroll to bottom after adjustment
 };
 
 // Initial setup to capture viewport height and set base padding
 window.addEventListener("load", () => {
-  initialViewportHeight = window.innerHeight; // Capture initial height
+  initialViewportHeight = viewport.height; // Capture initial height
   adjustChatPadding(); // Set initial padding
   scrollToBottom(); // Initial scroll
 });
 
-// Listen for input focus (keyboard likely to appear)
+// Use visualViewport.onresize for more reliable keyboard detection
+if (window.visualViewport) {
+  viewport.addEventListener("resize", () => {
+    adjustChatPadding();
+  });
+} else {
+  // Fallback for older browsers without visualViewport
+  // Debounce to prevent excessive calls during rapid resizing
+  let resizeTimeout;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      adjustChatPadding();
+    }, 200); // Debounce time
+  });
+}
+
+// Ensure input is visible when focused (can trigger keyboard)
 input.addEventListener("focus", () => {
-  // Use a small timeout to allow keyboard to start appearing
+  // Use a slight delay to allow the keyboard to start appearing
   setTimeout(() => {
     adjustChatPadding();
-  }, 100);
+    input.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, 50);
 });
 
-// Listen for input blur (keyboard likely to disappear)
-input.addEventListener("blur", () => {
-  // Use a small timeout to allow keyboard to fully disappear
-  setTimeout(() => {
-    adjustChatPadding();
-  }, 100);
-});
-
-// Listen for window resize (keyboard appearance/disappearance triggers this)
-// Debounce to prevent excessive calls during rapid resizing
-let resizeTimeout;
-window.addEventListener("resize", () => {
-  clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(() => {
-    adjustChatPadding();
-  }, 200); // Debounce time
-});
-// --- END KEYBOARD HANDLING LOGIC ---
+// No need for 'blur' listener for padding, 'resize' handles keyboard closing.
+// --- END NEW KEYBOARD HANDLING LOGIC ---
 
 function getGenderSymbol(gender) {
   return gender === "female" ? "♀" : "♂";
