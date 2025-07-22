@@ -22,10 +22,10 @@ let myGender = "male";
 let myNickname = "";
 let myAge = null;
 
-// Store initial viewport height using visualViewport if available
-let initialViewportHeight = window.visualViewport
-  ? window.visualViewport.height
-  : window.innerHeight;
+// Use visualViewport if available, otherwise fallback to window
+const viewport = window.visualViewport || window;
+// Initialized on load for stability
+let initialViewportHeight = 0;
 
 function showUserModal() {
   userModal.style.display = "flex";
@@ -71,21 +71,17 @@ form.addEventListener("submit", (e) => {
   if (input.value) {
     socket.emit("chat message", { room: currentRoom, text: input.value });
     input.value = "";
-    // Keep focus on input for quick replies, and let keyboard handler do its work
     input.focus();
   }
 });
 
-// A robust scroll to bottom function
 function scrollToBottom() {
   if (messages.lastElementChild) {
-    // Scroll the last message element into view
     messages.lastElementChild.scrollIntoView({
       behavior: "smooth",
       block: "end",
     });
   } else {
-    // Fallback if no messages yet, scroll the container itself
     requestAnimationFrame(() => {
       messages.scrollTop = messages.scrollHeight;
     });
@@ -109,7 +105,7 @@ function addMessage(msg) {
     </div>
   `;
   messages.appendChild(item);
-  scrollToBottom(); // Call the robust scroll function
+  scrollToBottom();
 }
 
 socket.on("chat message", (msg) => {
@@ -131,16 +127,12 @@ socket.on("chat message", (msg) => {
 socket.on("room history", (msgs) => {
   messages.innerHTML = "";
   msgs.forEach(addMessage);
-  // Ensure final scroll after all history is added
   setTimeout(() => {
     scrollToBottom();
-  }, 150); // Small delay to allow rendering
+  }, 150);
 });
 
-// --- NEW KEYBOARD HANDLING LOGIC ---
-// Use visualViewport if available, otherwise fallback to window.innerHeight
-const viewport = window.visualViewport || window;
-
+// --- REFINED KEYBOARD HANDLING LOGIC ---
 const adjustChatPadding = () => {
   // Only apply this logic on smaller screens (mobile)
   if (window.innerWidth > 768) {
@@ -148,76 +140,61 @@ const adjustChatPadding = () => {
     return;
   }
 
-  // Get current height of the form (which is fixed at the bottom)
-  const formHeight = form.offsetHeight;
-
-  // Calculate the space taken by the keyboard
-  // visualViewport.height is the layout viewport height (excluding keyboard)
-  // window.innerHeight is often the full viewport height (including browser UI, but can be affected by keyboard)
-  // Using visualViewport.height is generally more reliable for keyboard detection.
+  const formHeight = form.offsetHeight; // Get current height of the fixed input form
   const keyboardHeight = initialViewportHeight - viewport.height;
-
-  // A small threshold to distinguish keyboard from minor browser UI changes
   const threshold = 50; // Minimum pixel change to consider it a keyboard
 
   let dynamicPadding = 0;
 
   if (keyboardHeight > threshold) {
-    // Keyboard is likely open
-    // We want the bottom of messages to be above the keyboard AND the input form
-    dynamicPadding = keyboardHeight + formHeight + 10; // Add a small buffer (10px)
-    // console.log(`Keyboard open. KB height: ${keyboardHeight}, Form height: ${formHeight}, Padding: ${dynamicPadding}`);
+    // Keyboard is open: padding = keyboard height + form height + buffer
+    dynamicPadding = keyboardHeight + formHeight + 10;
   } else {
-    // Keyboard is likely closed
-    // Set padding to just clear the input form + safe area
+    // Keyboard is closed: padding = form height + safe area + buffer
     const safeAreaBottom = window
       .getComputedStyle(document.documentElement)
       .getPropertyValue("env(safe-area-inset-bottom, 0px)")
       .trim();
     const safeAreaBottomPx = parseFloat(safeAreaBottom) || 0;
-    dynamicPadding = formHeight + safeAreaBottomPx + 10; // Add small buffer
-    // console.log(`Keyboard closed. Form height: ${formHeight}, Safe Area: ${safeAreaBottomPx}, Padding: ${dynamicPadding}`);
+    dynamicPadding = formHeight + safeAreaBottomPx + 10;
   }
 
   messages.style.paddingBottom = `${dynamicPadding}px`;
-  scrollToBottom(); // Always scroll to bottom after adjustment
+
+  // Use requestAnimationFrame to ensure reflow before scrolling for smoother animation
+  requestAnimationFrame(() => {
+    scrollToBottom();
+  });
 };
 
-// Initial setup to capture viewport height and set base padding
+// Initial setup on window load for stable viewport height capture
 window.addEventListener("load", () => {
-  initialViewportHeight = viewport.height; // Capture initial height
-  adjustChatPadding(); // Set initial padding
-  scrollToBottom(); // Initial scroll
+  initialViewportHeight = viewport.height; // Capture stable initial viewport height
+  adjustChatPadding(); // Apply initial padding
 });
 
-// Use visualViewport.onresize for more reliable keyboard detection
+// Event listener for viewport resize (triggered by keyboard appearance/disappearance)
 if (window.visualViewport) {
-  viewport.addEventListener("resize", () => {
-    adjustChatPadding();
-  });
+  viewport.addEventListener("resize", adjustChatPadding);
 } else {
-  // Fallback for older browsers without visualViewport
-  // Debounce to prevent excessive calls during rapid resizing
+  // Fallback for browsers without visualViewport (e.g., older Safari)
   let resizeTimeout;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-      adjustChatPadding();
-    }, 200); // Debounce time
+    resizeTimeout = setTimeout(adjustChatPadding, 200); // Debounce
   });
 }
 
-// Ensure input is visible when focused (can trigger keyboard)
+// When the input is focused, adjust padding and scroll the input into view
 input.addEventListener("focus", () => {
-  // Use a slight delay to allow the keyboard to start appearing
+  // Small delay to allow the keyboard to start animating before adjustment
   setTimeout(() => {
     adjustChatPadding();
+    // Scroll the input element into view to ensure it's not hidden
     input.scrollIntoView({ behavior: "smooth", block: "end" });
   }, 50);
 });
-
-// No need for 'blur' listener for padding, 'resize' handles keyboard closing.
-// --- END NEW KEYBOARD HANDLING LOGIC ---
+// --- END REFINED KEYBOARD HANDLING LOGIC ---
 
 function getGenderSymbol(gender) {
   return gender === "female" ? "♀" : "♂";
