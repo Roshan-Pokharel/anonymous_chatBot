@@ -22,11 +22,6 @@ let myGender = "male";
 let myNickname = "";
 let myAge = null;
 
-// Use visualViewport if available, otherwise fallback to window
-const viewport = window.visualViewport || window;
-// Initialized on load for stability
-let initialViewportHeight = 0;
-
 function showUserModal() {
   userModal.style.display = "flex";
   nicknameInput.focus();
@@ -71,17 +66,20 @@ form.addEventListener("submit", (e) => {
   if (input.value) {
     socket.emit("chat message", { room: currentRoom, text: input.value });
     input.value = "";
-    input.focus();
+    input.focus(); // Keep focus on input for quick replies
   }
 });
 
+// A robust scroll to bottom function
 function scrollToBottom() {
   if (messages.lastElementChild) {
+    // Scroll the last message element into view
     messages.lastElementChild.scrollIntoView({
       behavior: "smooth",
       block: "end",
     });
   } else {
+    // Fallback if no messages yet, scroll the container itself
     requestAnimationFrame(() => {
       messages.scrollTop = messages.scrollHeight;
     });
@@ -105,7 +103,7 @@ function addMessage(msg) {
     </div>
   `;
   messages.appendChild(item);
-  scrollToBottom();
+  scrollToBottom(); // Call the robust scroll function
 }
 
 socket.on("chat message", (msg) => {
@@ -127,74 +125,30 @@ socket.on("chat message", (msg) => {
 socket.on("room history", (msgs) => {
   messages.innerHTML = "";
   msgs.forEach(addMessage);
+  // Ensure final scroll after all history is added
   setTimeout(() => {
     scrollToBottom();
-  }, 150);
+  }, 150); // Small delay to allow rendering
 });
 
-// --- REFINED KEYBOARD HANDLING LOGIC ---
-const adjustChatPadding = () => {
-  // Only apply this logic on smaller screens (mobile)
-  if (window.innerWidth > 768) {
-    messages.style.paddingBottom = ""; // Reset for desktop
-    return;
-  }
-
-  const formHeight = form.offsetHeight; // Get current height of the fixed input form
-  const keyboardHeight = initialViewportHeight - viewport.height;
-  const threshold = 50; // Minimum pixel change to consider it a keyboard
-
-  let dynamicPadding = 0;
-
-  if (keyboardHeight > threshold) {
-    // Keyboard is open: padding = keyboard height + form height + buffer
-    dynamicPadding = keyboardHeight + formHeight + 10;
-  } else {
-    // Keyboard is closed: padding = form height + safe area + buffer
-    const safeAreaBottom = window
-      .getComputedStyle(document.documentElement)
-      .getPropertyValue("env(safe-area-inset-bottom, 0px)")
-      .trim();
-    const safeAreaBottomPx = parseFloat(safeAreaBottom) || 0;
-    dynamicPadding = formHeight + safeAreaBottomPx + 10;
-  }
-
-  messages.style.paddingBottom = `${dynamicPadding}px`;
-
-  // Use requestAnimationFrame to ensure reflow before scrolling for smoother animation
-  requestAnimationFrame(() => {
+// Listen for window resize events (triggered by keyboard on mobile)
+window.addEventListener("resize", () => {
+  setTimeout(() => {
     scrollToBottom();
-  });
-};
-
-// Initial setup on window load for stable viewport height capture
-window.addEventListener("load", () => {
-  initialViewportHeight = viewport.height; // Capture stable initial viewport height
-  adjustChatPadding(); // Apply initial padding
+  }, 200); // Give layout time to settle after resize
 });
 
-// Event listener for viewport resize (triggered by keyboard appearance/disappearance)
-if (window.visualViewport) {
-  viewport.addEventListener("resize", adjustChatPadding);
-} else {
-  // Fallback for browsers without visualViewport (e.g., older Safari)
-  let resizeTimeout;
-  window.addEventListener("resize", () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(adjustChatPadding, 200); // Debounce
-  });
-}
-
-// When the input is focused, adjust padding and scroll the input into view
+// Input focus listener for mobile keyboard adjustment
 input.addEventListener("focus", () => {
-  // Small delay to allow the keyboard to start animating before adjustment
   setTimeout(() => {
-    adjustChatPadding();
-    // Scroll the input element into view to ensure it's not hidden
-    input.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, 50);
+    scrollToBottom();
+  }, 300); // Give virtual keyboard time to appear and layout to adjust
 });
-// --- END REFINED KEYBOARD HANDLING LOGIC ---
+
+// Initial scroll when the page loads
+window.addEventListener("load", () => {
+  scrollToBottom();
+});
 
 function getGenderSymbol(gender) {
   return gender === "female" ? "♀" : "♂";
@@ -297,3 +251,8 @@ allUsersModal.addEventListener("click", (e) => {
     allUsersModal.style.display = "none";
   }
 });
+
+// The initial focus and scroll on load
+window.onload = () => {
+  input.focus();
+};
