@@ -66,21 +66,26 @@ form.addEventListener("submit", (e) => {
   if (input.value) {
     socket.emit("chat message", { room: currentRoom, text: input.value });
     input.value = "";
-    // After sending, ensure the input field remains focused for quick replies
-    // and trigger a scroll to make sure the input isn't hidden by keyboard.
-    input.focus();
+    input.focus(); // Keep focus on input for quick replies
   }
 });
 
-// Using a slightly more robust scroll method
+// A robust scroll to bottom function
 function scrollToBottom() {
-  // Use requestAnimationFrame for smooth scrolling after browser repaint
-  requestAnimationFrame(() => {
-    messages.scrollTop = messages.scrollHeight;
-  });
+  if (messages.lastElementChild) {
+    // Scroll the last message element into view
+    messages.lastElementChild.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  } else {
+    // Fallback if no messages yet, scroll the container itself
+    requestAnimationFrame(() => {
+      messages.scrollTop = messages.scrollHeight;
+    });
+  }
 }
 
-// Optimized addMessage to use scrollIntoView
 function addMessage(msg) {
   const item = document.createElement("div");
   item.classList.add("msg");
@@ -98,13 +103,9 @@ function addMessage(msg) {
     </div>
   `;
   messages.appendChild(item);
-
-  // Scroll the newly added message into view
-  // 'behavior: "smooth"' for animation, 'block: "end"' to align to bottom
-  item.scrollIntoView({ behavior: "smooth", block: "end" });
+  scrollToBottom(); // Call the robust scroll function
 }
 
-// Message handler with unread notification logic
 socket.on("chat message", (msg) => {
   if (msg.room !== "public" && currentRoom !== msg.room && msg.to === myId) {
     const otherId = msg.id;
@@ -121,26 +122,30 @@ socket.on("chat message", (msg) => {
   }
 });
 
-// When joining a room, load its history
 socket.on("room history", (msgs) => {
   messages.innerHTML = "";
   msgs.forEach(addMessage);
-  // After loading history, ensure we scroll to the bottom
-  // Use a slight delay to ensure all messages are rendered before final scroll
+  // Ensure final scroll after all history is added
   setTimeout(() => {
     scrollToBottom();
-  }, 100);
+  }, 150); // Small delay to allow rendering
+});
+
+// Listen for window resize events (triggered by keyboard on mobile)
+window.addEventListener("resize", () => {
+  setTimeout(() => {
+    scrollToBottom();
+  }, 200); // Give layout time to settle after resize
 });
 
 // Input focus listener for mobile keyboard adjustment
 input.addEventListener("focus", () => {
-  // Give a small delay to allow virtual keyboard to appear and layout to adjust
   setTimeout(() => {
     scrollToBottom();
-  }, 300);
+  }, 300); // Give virtual keyboard time to appear and layout to adjust
 });
 
-// Initial scroll when the page loads, in case there's initial content
+// Initial scroll when the page loads
 window.addEventListener("load", () => {
   scrollToBottom();
 });
@@ -247,7 +252,7 @@ allUsersModal.addEventListener("click", (e) => {
   }
 });
 
-// Added this to ensure initial scroll works
+// The initial focus and scroll on load
 window.onload = () => {
   input.focus();
 };
