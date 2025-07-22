@@ -184,20 +184,23 @@
         #chat {
           /* Adjust for fixed topBar and fixed form */
           padding: 0 16px; /* Remove top/bottom padding here */
+          padding-top: calc(
+            56px + env(safe-area-inset-top, 0px)
+          ); /* Top padding to clear topBar */
+          padding-bottom: calc(
+            72px + env(safe-area-inset-bottom, 0px)
+          ); /* IMPORTANT: Padding for fixed form and safe area */
           flex: 1; /* Allow #chat to take all available space */
           display: flex;
           flex-direction: column;
         }
         #roomTitle {
-          padding-top: calc(
-            12px + env(safe-area-inset-top)
-          ); /* Space above title */
+          /* No specific padding-top here as #chat now handles it */
           margin-bottom: 12px;
         }
         #messages {
           flex: 1; /* Ensure messages takes all available space between title and form */
           min-height: 0; /* Important for flex items to shrink */
-          /* No margin-bottom needed as form is fixed */
         }
         #form {
           flex-direction: row;
