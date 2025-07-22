@@ -23,12 +23,12 @@
         display: flex;
         flex-direction: column;
         height: 100dvh; /* Use dvh for dynamic viewport height */
-        overflow: hidden; /* Prevent body scroll */
+        overflow: hidden; /* Prevent body scroll. Chat container will scroll. */
       }
       .container {
         flex: 1;
         display: flex;
-        overflow: hidden; /* Important for containing children */
+        overflow: hidden; /* Prevent container scroll. #chat will handle it. */
         height: 100%; /* Take full height of parent flex item */
       }
       #sidebar {
@@ -45,6 +45,7 @@
         flex-direction: column;
         padding: 16px;
         position: relative; /* For proper positioning of children */
+        overflow: hidden; /* Prevent #chat scroll, #messages will scroll */
       }
       #roomTitle {
         font-size: 1.2rem;
@@ -53,13 +54,12 @@
       }
       #messages {
         flex: 1; /* Allows messages to take available height */
-        overflow-y: auto; /* Enable scrolling for messages */
+        overflow-y: auto; /* ENABLE SCROLLING FOR MESSAGES */
         padding: 12px;
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        /* No fixed margin-bottom here, rely on form's fixed position and padding */
       }
       .msg {
         display: flex;
@@ -94,7 +94,7 @@
       #form {
         display: flex;
         gap: 10px;
-        margin-top: auto; /* Pushes form to bottom in desktop view */
+        margin-top: 16px; /* Space between messages and input on desktop */
       }
       #input {
         flex: 1;
@@ -182,11 +182,22 @@
           padding: 12px 16px; /* Consistent padding */
         }
         #chat {
-          padding-top: calc(56px + env(safe-area-inset-top)); /* Adjust for topBar and safe area */
-          padding-bottom: calc(
-            72px + env(safe-area-inset-bottom)
-          ); /* Adjust for fixed form and safe area */
-          flex: 1; /* Ensure chat takes remaining space */
+          /* Adjust for fixed topBar and fixed form */
+          padding: 0 16px; /* Remove top/bottom padding here */
+          flex: 1; /* Allow #chat to take all available space */
+          display: flex;
+          flex-direction: column;
+        }
+        #roomTitle {
+          padding-top: calc(
+            12px + env(safe-area-inset-top)
+          ); /* Space above title */
+          margin-bottom: 12px;
+        }
+        #messages {
+          flex: 1; /* Ensure messages takes all available space between title and form */
+          min-height: 0; /* Important for flex items to shrink */
+          /* No margin-bottom needed as form is fixed */
         }
         #form {
           flex-direction: row;
@@ -199,11 +210,7 @@
           padding: 8px 8px env(safe-area-inset-bottom, 8px) 8px; /* Padding for safe area */
           box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
           z-index: 10;
-        }
-        #messages {
-          margin-bottom: 0; /* No margin-bottom needed as form is fixed */
-          height: auto; /* Allow messages to fill space */
-          flex: 1;
+          margin-top: 0; /* Remove desktop margin */
         }
         button {
           width: auto;
