@@ -66,22 +66,21 @@ form.addEventListener("submit", (e) => {
   if (input.value) {
     socket.emit("chat message", { room: currentRoom, text: input.value });
     input.value = "";
+    // After sending, ensure the input field remains focused for quick replies
+    // and trigger a scroll to make sure the input isn't hidden by keyboard.
+    input.focus();
   }
 });
 
-input.addEventListener("focus", () => {
-  setTimeout(() => {
+// Using a slightly more robust scroll method
+function scrollToBottom() {
+  // Use requestAnimationFrame for smooth scrolling after browser repaint
+  requestAnimationFrame(() => {
     messages.scrollTop = messages.scrollHeight;
-  }, 300);
-});
-
-function getGenderSymbol(gender) {
-  return gender === "female" ? "♀" : "♂";
-}
-function getNameColor(gender) {
-  return gender === "female" ? "#e75480" : "#3b82f6";
+  });
 }
 
+// Optimized addMessage to use scrollIntoView
 function addMessage(msg) {
   const item = document.createElement("div");
   item.classList.add("msg");
@@ -99,9 +98,13 @@ function addMessage(msg) {
     </div>
   `;
   messages.appendChild(item);
-  messages.scrollTop = messages.scrollHeight;
+
+  // Scroll the newly added message into view
+  // 'behavior: "smooth"' for animation, 'block: "end"' to align to bottom
+  item.scrollIntoView({ behavior: "smooth", block: "end" });
 }
 
+// Message handler with unread notification logic
 socket.on("chat message", (msg) => {
   if (msg.room !== "public" && currentRoom !== msg.room && msg.to === myId) {
     const otherId = msg.id;
@@ -118,11 +121,36 @@ socket.on("chat message", (msg) => {
   }
 });
 
+// When joining a room, load its history
 socket.on("room history", (msgs) => {
   messages.innerHTML = "";
   msgs.forEach(addMessage);
-  messages.scrollTop = messages.scrollHeight;
+  // After loading history, ensure we scroll to the bottom
+  // Use a slight delay to ensure all messages are rendered before final scroll
+  setTimeout(() => {
+    scrollToBottom();
+  }, 100);
 });
+
+// Input focus listener for mobile keyboard adjustment
+input.addEventListener("focus", () => {
+  // Give a small delay to allow virtual keyboard to appear and layout to adjust
+  setTimeout(() => {
+    scrollToBottom();
+  }, 300);
+});
+
+// Initial scroll when the page loads, in case there's initial content
+window.addEventListener("load", () => {
+  scrollToBottom();
+});
+
+function getGenderSymbol(gender) {
+  return gender === "female" ? "♀" : "♂";
+}
+function getNameColor(gender) {
+  return gender === "female" ? "#e75480" : "#3b82f6";
+}
 
 function updateUserList() {
   userList.innerHTML = "";
@@ -219,6 +247,7 @@ allUsersModal.addEventListener("click", (e) => {
   }
 });
 
+// Added this to ensure initial scroll works
 window.onload = () => {
   input.focus();
 };
