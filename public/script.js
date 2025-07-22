@@ -22,6 +22,10 @@ let myGender = "male";
 let myNickname = "";
 let myAge = null;
 
+// Store initial viewport height to detect keyboard
+let initialViewportHeight = window.innerHeight;
+let isKeyboardOpen = false;
+
 function showUserModal() {
   userModal.style.display = "flex";
   nicknameInput.focus();
@@ -131,24 +135,84 @@ socket.on("room history", (msgs) => {
   }, 150); // Small delay to allow rendering
 });
 
-// Listen for window resize events (triggered by keyboard on mobile)
-window.addEventListener("resize", () => {
-  setTimeout(() => {
-    scrollToBottom();
-  }, 200); // Give layout time to settle after resize
-});
+// --- KEYBOARD HANDLING LOGIC ---
+const adjustChatPadding = () => {
+  // Only apply this logic on smaller screens (mobile)
+  if (window.innerWidth > 768) {
+    messages.style.paddingBottom = ""; // Reset for desktop
+    return;
+  }
 
-// Input focus listener for mobile keyboard adjustment
-input.addEventListener("focus", () => {
-  setTimeout(() => {
-    scrollToBottom();
-  }, 300); // Give virtual keyboard time to appear and layout to adjust
-});
+  const currentViewportHeight = window.innerHeight;
+  const keyboardHeightEstimate = initialViewportHeight - currentViewportHeight;
+  const formHeight = form.offsetHeight; // Get current height of the form
 
-// Initial scroll when the page loads
+  // A small threshold to account for minor resizes not related to keyboard
+  const threshold = 100;
+
+  if (keyboardHeightEstimate > threshold) {
+    // Keyboard is likely open
+    isKeyboardOpen = true;
+    // Set padding-bottom of messages to clear the keyboard + form + a little extra
+    messages.style.paddingBottom = `${
+      keyboardHeightEstimate + formHeight + 10
+    }px`;
+    // Also scroll the input into view to ensure it's not hidden
+    input.scrollIntoView({ behavior: "smooth", block: "end" });
+  } else {
+    // Keyboard is likely closed
+    isKeyboardOpen = false;
+    // Reset padding-bottom. Add the original fixed form height + safe area.
+    // We assume the form's height on mobile is roughly 72px (from its padding in CSS) + safe area.
+    // This value must match the form's height in CSS when no keyboard is present.
+    const defaultFormBottomSpace = formHeight; // Use actual form height
+    const safeAreaBottom =
+      parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          "--sa-b",
+          "0"
+        )
+      ) || 0; // Fallback if env() not supported
+    messages.style.paddingBottom = `${
+      defaultFormBottomSpace + safeAreaBottom + 10
+    }px`; // Add a small buffer too
+  }
+  scrollToBottom(); // Always scroll to bottom after adjustment
+};
+
+// Initial setup to capture viewport height and set base padding
 window.addEventListener("load", () => {
-  scrollToBottom();
+  initialViewportHeight = window.innerHeight; // Capture initial height
+  adjustChatPadding(); // Set initial padding
+  scrollToBottom(); // Initial scroll
 });
+
+// Listen for input focus (keyboard likely to appear)
+input.addEventListener("focus", () => {
+  // Use a small timeout to allow keyboard to start appearing
+  setTimeout(() => {
+    adjustChatPadding();
+  }, 100);
+});
+
+// Listen for input blur (keyboard likely to disappear)
+input.addEventListener("blur", () => {
+  // Use a small timeout to allow keyboard to fully disappear
+  setTimeout(() => {
+    adjustChatPadding();
+  }, 100);
+});
+
+// Listen for window resize (keyboard appearance/disappearance triggers this)
+// Debounce to prevent excessive calls during rapid resizing
+let resizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    adjustChatPadding();
+  }, 200); // Debounce time
+});
+// --- END KEYBOARD HANDLING LOGIC ---
 
 function getGenderSymbol(gender) {
   return gender === "female" ? "♀" : "♂";
@@ -251,8 +315,3 @@ allUsersModal.addEventListener("click", (e) => {
     allUsersModal.style.display = "none";
   }
 });
-
-// The initial focus and scroll on load
-window.onload = () => {
-  input.focus();
-};

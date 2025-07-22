@@ -43,7 +43,7 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        padding: 16px;
+        padding: 16px; /* Default desktop padding */
         position: relative; /* For proper positioning of children */
         overflow: hidden; /* Prevent #chat scroll, #messages will scroll */
       }
@@ -60,6 +60,7 @@
         border: 1px solid #e5e7eb;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        /* Will have dynamic padding-bottom added by JS */
       }
       .msg {
         display: flex;
@@ -182,27 +183,21 @@
           padding: 12px 16px; /* Consistent padding */
         }
         #chat {
-          /* Adjust for fixed topBar and fixed form */
-          padding: 0 16px; /* Remove top/bottom padding here */
+          padding: 0 16px; /* Remove top/bottom padding here for mobile */
           padding-top: calc(
             56px + env(safe-area-inset-top, 0px)
           ); /* Top padding to clear topBar */
-          /* IMPORTANT: Calculate bottom padding to match the exact height of the form + safe area */
-          /* Form height (approx 44px for input + 12px button padding + 8px top/bottom form padding) + safe-area */
-          padding-bottom: calc(
-            (8px + 40px + 40px + 8px) + env(safe-area-inset-bottom, 0px)
-          ); /* Adjust this value if input/button sizes change */
           flex: 1; /* Allow #chat to take all available space */
           display: flex;
           flex-direction: column;
         }
         #roomTitle {
-          /* No specific padding-top here as #chat now handles it */
           margin-bottom: 12px;
         }
         #messages {
           flex: 1; /* Ensure messages takes all available space between title and form */
           min-height: 0; /* Important for flex items to shrink */
+          /* Dynamic padding-bottom will be set by JS */
         }
         #form {
           flex-direction: row;
