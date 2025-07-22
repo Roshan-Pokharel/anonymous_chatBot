@@ -6,17 +6,15 @@ const userList = document.getElementById("userList");
 const roomTitle = document.getElementById("roomTitle");
 const showUsersBtn = document.getElementById("showUsersBtn");
 
-// Modal elements
 const userModal = document.getElementById("userModal");
 const userForm = document.getElementById("userForm");
 const nicknameInput = document.getElementById("nicknameInput");
 const ageInput = document.getElementById("ageInput");
 
-// All users modal (for mobile)
 const allUsersModal = document.getElementById("allUsersModal");
 const allUsersList = document.getElementById("allUsersList");
 let latestUsers = [];
-let unreadPrivate = {}; // Track unread private messages
+let unreadPrivate = {};
 
 let currentRoom = "public";
 let myId = null;
@@ -24,7 +22,6 @@ let myGender = "male";
 let myNickname = "";
 let myAge = null;
 
-// Show modal and handle form
 function showUserModal() {
   userModal.style.display = "flex";
   nicknameInput.focus();
@@ -52,7 +49,6 @@ function showUserModal() {
   };
 }
 
-// Unique nickname error handler
 socket.on("nickname taken", () => {
   nicknameInput.style.borderColor = "#e11d48";
   nicknameInput.value = "";
@@ -70,15 +66,13 @@ form.addEventListener("submit", (e) => {
   if (input.value) {
     socket.emit("chat message", { room: currentRoom, text: input.value });
     input.value = "";
-    setTimeout(() => input.focus(), 10);
   }
 });
 
-// Always scroll messages to bottom on input focus (mobile fix)
 input.addEventListener("focus", () => {
   setTimeout(() => {
     messages.scrollTop = messages.scrollHeight;
-  }, 100);
+  }, 300);
 });
 
 function getGenderSymbol(gender) {
@@ -88,7 +82,6 @@ function getNameColor(gender) {
   return gender === "female" ? "#e75480" : "#3b82f6";
 }
 
-// Add message to chat
 function addMessage(msg) {
   const item = document.createElement("div");
   item.classList.add("msg");
@@ -109,21 +102,14 @@ function addMessage(msg) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-// Message handler with unread notification logic
 socket.on("chat message", (msg) => {
-  // If it's a private message and I'm not in that private room, mark as unread
-  if (
-    msg.room !== "public" &&
-    currentRoom !== msg.room &&
-    msg.to === myId // Only mark as unread if I'm the recipient
-  ) {
+  if (msg.room !== "public" && currentRoom !== msg.room && msg.to === myId) {
     const otherId = msg.id;
     unreadPrivate[otherId] = true;
     updateUserList();
   }
   if (msg.room === currentRoom) {
     addMessage(msg);
-    // Clear unread if in private room
     if (msg.room !== "public") {
       const otherId = msg.id === myId ? msg.to : msg.id;
       unreadPrivate[otherId] = false;
@@ -132,16 +118,14 @@ socket.on("chat message", (msg) => {
   }
 });
 
-// When joining a room, load its history
 socket.on("room history", (msgs) => {
   messages.innerHTML = "";
   msgs.forEach(addMessage);
+  messages.scrollTop = messages.scrollHeight;
 });
 
-// User list rendering with red dot for unread private messages
 function updateUserList() {
   userList.innerHTML = "";
-  // Public room button
   const publicBtn = document.createElement("div");
   publicBtn.className = "user";
   publicBtn.textContent = "🌐 Public Room";
@@ -180,12 +164,10 @@ socket.on("user list", (users) => {
   updateUserList();
 });
 
-// Show online users modal when clicking "Users" button (mobile)
 showUsersBtn.onclick = () => {
   if (window.innerWidth <= 768) {
     allUsersList.innerHTML = "";
 
-    // Add Public Room button at the top of modal
     const publicBtn = document.createElement("div");
     publicBtn.className = "user";
     publicBtn.style =
@@ -231,7 +213,6 @@ showUsersBtn.onclick = () => {
   }
 };
 
-// Hide all users modal when clicking outside (optional UX)
 allUsersModal.addEventListener("click", (e) => {
   if (e.target === allUsersModal) {
     allUsersModal.style.display = "none";

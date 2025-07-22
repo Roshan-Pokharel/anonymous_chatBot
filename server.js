@@ -7,9 +7,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static("public"));
 
 let users = {};
-let roomMessages = {}; // { roomId: [ { ...msg, timestamp } ] }
+let roomMessages = {};
 
-// Prune messages older than 5 minutes every minute
 function pruneMessages() {
   const now = Date.now();
   for (const room in roomMessages) {
@@ -22,7 +21,6 @@ setInterval(pruneMessages, 60 * 1000);
 
 io.on("connection", (socket) => {
   socket.on("user info", ({ nickname, gender, age }) => {
-    // Check for duplicate nickname
     const taken = Object.values(users).some(
       (u) => u.name.toLowerCase() === nickname.trim().toLowerCase()
     );
@@ -50,7 +48,6 @@ io.on("connection", (socket) => {
 
   socket.on("join room", (roomId) => {
     socket.join(roomId);
-    // Send last 5 min messages for this room
     const msgs = (roomMessages[roomId] || []).map((msg) => {
       const { timestamp, ...rest } = msg;
       return rest;
@@ -69,12 +66,10 @@ io.on("connection", (socket) => {
       room,
       timestamp: Date.now(),
     };
-    // If private, add 'to' field for notification
     if (room !== "public") {
       const ids = room.split("-");
       msg.to = ids.find((id) => id !== socket.id);
     }
-    // Store message
     if (!roomMessages[room]) roomMessages[room] = [];
     roomMessages[room].push(msg);
     io.to(room).emit("chat message", msg);
