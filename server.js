@@ -7,16 +7,10 @@ const PORT = process.env.PORT || 3000;
 // Serve static files from the 'public' directory
 app.use(express.static("public"));
 
-<<<<<<< HEAD
 let users = {}; // Stores user data: { socket.id: { name, gender, age } }
 let roomMessages = {}; // Stores messages: { roomId: [ { ...msg, timestamp } ] }
 
 // Function to prune messages older than 5 minutes. This runs every minute.
-=======
-let users = {};
-let roomMessages = {};
-
->>>>>>> e6bd17ac0985092d74272b657befb79a7b2ccaaf
 function pruneMessages() {
   const now = Date.now();
   const fiveMinutesAgo = 5 * 60 * 1000;
@@ -31,10 +25,7 @@ setInterval(pruneMessages, 60 * 1000);
 io.on("connection", (socket) => {
   // When a user provides their info
   socket.on("user info", ({ nickname, gender, age }) => {
-<<<<<<< HEAD
     // Check if the nickname is already taken (case-insensitive)
-=======
->>>>>>> e6bd17ac0985092d74272b657befb79a7b2ccaaf
     const taken = Object.values(users).some(
       (u) => u.name.toLowerCase() === nickname.trim().toLowerCase()
     );
@@ -69,10 +60,7 @@ io.on("connection", (socket) => {
   // When a user requests to join a room (public or private)
   socket.on("join room", (roomId) => {
     socket.join(roomId);
-<<<<<<< HEAD
     // Send the message history for the joined room (last 5 mins)
-=======
->>>>>>> e6bd17ac0985092d74272b657befb79a7b2ccaaf
     const msgs = (roomMessages[roomId] || []).map((msg) => {
       const { timestamp, ...rest } = msg; // Don't send timestamp to client
       return rest;
@@ -92,24 +80,17 @@ io.on("connection", (socket) => {
       room,
       timestamp: Date.now(),
     };
-<<<<<<< HEAD
 
     // If it's a private message, add a 'to' field for notifications
-=======
->>>>>>> e6bd17ac0985092d74272b657befb79a7b2ccaaf
     if (room !== "public") {
       const ids = room.split("-");
       msg.to = ids.find((id) => id !== socket.id);
     }
-<<<<<<< HEAD
 
     // Store the message
     if (!roomMessages[room]) {
       roomMessages[room] = [];
     }
-=======
-    if (!roomMessages[room]) roomMessages[room] = [];
->>>>>>> e6bd17ac0985092d74272b657befb79a7b2ccaaf
     roomMessages[room].push(msg);
 
     // Broadcast the message to the specific room
