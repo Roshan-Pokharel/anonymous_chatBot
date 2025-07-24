@@ -6,17 +6,15 @@ const userList = document.getElementById("userList");
 const roomTitle = document.getElementById("roomTitle");
 const showUsersBtn = document.getElementById("showUsersBtn");
 
-// Modal elements
 const userModal = document.getElementById("userModal");
 const userForm = document.getElementById("userForm");
 const nicknameInput = document.getElementById("nicknameInput");
 const ageInput = document.getElementById("ageInput");
 
-// All users modal (for mobile)
 const allUsersModal = document.getElementById("allUsersModal");
 const allUsersList = document.getElementById("allUsersList");
 let latestUsers = [];
-let unreadPrivate = {}; // Track unread private messages
+let unreadPrivate = {};
 
 let currentRoom = "public";
 let myId = null;
@@ -24,7 +22,6 @@ let myGender = "male";
 let myNickname = "";
 let myAge = null;
 
-// Show modal and handle form
 function showUserModal() {
   userModal.style.display = "flex";
   nicknameInput.focus();
@@ -52,7 +49,6 @@ function showUserModal() {
   };
 }
 
-// Unique nickname error handler
 socket.on("nickname taken", () => {
   nicknameInput.style.borderColor = "#e11d48";
   nicknameInput.value = "";
@@ -70,25 +66,26 @@ form.addEventListener("submit", (e) => {
   if (input.value) {
     socket.emit("chat message", { room: currentRoom, text: input.value });
     input.value = "";
-    setTimeout(() => input.focus(), 10);
+    input.focus(); // Keep focus on input for quick replies
   }
 });
 
-// Always scroll messages to bottom on input focus (mobile fix)
-input.addEventListener("focus", () => {
-  setTimeout(() => {
-    messages.scrollTop = messages.scrollHeight;
-  }, 100);
-});
-
-function getGenderSymbol(gender) {
-  return gender === "female" ? "♀" : "♂";
+// A robust scroll to bottom function
+function scrollToBottom() {
+  if (messages.lastElementChild) {
+    // Scroll the last message element into view
+    messages.lastElementChild.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  } else {
+    // Fallback if no messages yet, scroll the container itself
+    requestAnimationFrame(() => {
+      messages.scrollTop = messages.scrollHeight;
+    });
+  }
 }
-function getNameColor(gender) {
-  return gender === "female" ? "#e75480" : "#3b82f6";
-}
 
-// Add message to chat
 function addMessage(msg) {
   const item = document.createElement("div");
   item.classList.add("msg");
@@ -106,24 +103,17 @@ function addMessage(msg) {
     </div>
   `;
   messages.appendChild(item);
-  messages.scrollTop = messages.scrollHeight;
+  scrollToBottom(); // Call the robust scroll function
 }
 
-// Message handler with unread notification logic
 socket.on("chat message", (msg) => {
-  // If it's a private message and I'm not in that private room, mark as unread
-  if (
-    msg.room !== "public" &&
-    currentRoom !== msg.room &&
-    msg.to === myId // Only mark as unread if I'm the recipient
-  ) {
+  if (msg.room !== "public" && currentRoom !== msg.room && msg.to === myId) {
     const otherId = msg.id;
     unreadPrivate[otherId] = true;
     updateUserList();
   }
   if (msg.room === currentRoom) {
     addMessage(msg);
-    // Clear unread if in private room
     if (msg.room !== "public") {
       const otherId = msg.id === myId ? msg.to : msg.id;
       unreadPrivate[otherId] = false;
@@ -132,16 +122,43 @@ socket.on("chat message", (msg) => {
   }
 });
 
-// When joining a room, load its history
 socket.on("room history", (msgs) => {
   messages.innerHTML = "";
   msgs.forEach(addMessage);
+  // Ensure final scroll after all history is added
+  setTimeout(() => {
+    scrollToBottom();
+  }, 150); // Small delay to allow rendering
 });
 
-// User list rendering with red dot for unread private messages
+// Listen for window resize events (triggered by keyboard on mobile)
+window.addEventListener("resize", () => {
+  setTimeout(() => {
+    scrollToBottom();
+  }, 200); // Give layout time to settle after resize
+});
+
+// Input focus listener for mobile keyboard adjustment
+input.addEventListener("focus", () => {
+  setTimeout(() => {
+    scrollToBottom();
+  }, 300); // Give virtual keyboard time to appear and layout to adjust
+});
+
+// Initial scroll when the page loads
+window.addEventListener("load", () => {
+  scrollToBottom();
+});
+
+function getGenderSymbol(gender) {
+  return gender === "female" ? "♀" : "♂";
+}
+function getNameColor(gender) {
+  return gender === "female" ? "#e75480" : "#3b82f6";
+}
+
 function updateUserList() {
   userList.innerHTML = "";
-  // Public room button
   const publicBtn = document.createElement("div");
   publicBtn.className = "user";
   publicBtn.textContent = "🌐 Public Room";
@@ -180,12 +197,10 @@ socket.on("user list", (users) => {
   updateUserList();
 });
 
-// Show online users modal when clicking "Users" button (mobile)
 showUsersBtn.onclick = () => {
   if (window.innerWidth <= 768) {
     allUsersList.innerHTML = "";
 
-    // Add Public Room button at the top of modal
     const publicBtn = document.createElement("div");
     publicBtn.className = "user";
     publicBtn.style =
@@ -231,13 +246,13 @@ showUsersBtn.onclick = () => {
   }
 };
 
-// Hide all users modal when clicking outside (optional UX)
 allUsersModal.addEventListener("click", (e) => {
   if (e.target === allUsersModal) {
     allUsersModal.style.display = "none";
   }
 });
 
+<<<<<<< HEAD
 // *** MOBILE KEYBOARD FIX ***
 // This function adjusts the viewport height when the virtual keyboard appears
 function adjustHeightForKeyboard() {
@@ -261,5 +276,9 @@ window.addEventListener("resize", adjustHeightForKeyboard);
 // Initial call to set the value when the page loads
 window.addEventListener("load", () => {
   adjustHeightForKeyboard();
+=======
+// The initial focus and scroll on load
+window.onload = () => {
+>>>>>>> e6bd17ac0985092d74272b657befb79a7b2ccaaf
   input.focus();
 });
