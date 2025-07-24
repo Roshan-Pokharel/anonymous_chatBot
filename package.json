@@ -1,6 +1,7 @@
 {
-  "name": "anon-chat-app",
+  "name": "anonymous-chat-app",
   "version": "1.0.0",
+  "description": "An anonymous chat application with private messaging.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

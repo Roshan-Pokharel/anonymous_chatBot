@@ -238,6 +238,28 @@ allUsersModal.addEventListener("click", (e) => {
   }
 });
 
-window.onload = () => {
+// *** MOBILE KEYBOARD FIX ***
+// This function adjusts the viewport height when the virtual keyboard appears
+function adjustHeightForKeyboard() {
+  // We only run this on mobile devices
+  if (window.innerWidth <= 768) {
+    // 1. Get the actual inner height of the window
+    let vh = window.innerHeight * 0.01;
+    // 2. Set the value of --vh custom property to the root of the document
+    document.documentElement.style.setProperty("--vh", `${vh}px`);
+
+    // 3. Ensure the message list scrolls to the bottom after the resize
+    setTimeout(() => {
+      messages.scrollTop = messages.scrollHeight;
+    }, 150);
+  }
+}
+
+// Listen for window resize events (which includes keyboard opening/closing)
+window.addEventListener("resize", adjustHeightForKeyboard);
+
+// Initial call to set the value when the page loads
+window.addEventListener("load", () => {
+  adjustHeightForKeyboard();
   input.focus();
-};
+});
