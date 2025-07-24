@@ -1,10 +1,12 @@
 const socket = io();
+// DOM Elements
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const messages = document.getElementById("messages");
 const userList = document.getElementById("userList");
 const roomTitle = document.getElementById("roomTitle");
 const showUsersBtn = document.getElementById("showUsersBtn");
+const themeToggleBtn = document.getElementById("theme-toggle");
 
 // Modal elements
 const userModal = document.getElementById("userModal");
@@ -15,16 +17,33 @@ const ageInput = document.getElementById("ageInput");
 // All users modal (for mobile)
 const allUsersModal = document.getElementById("allUsersModal");
 const allUsersList = document.getElementById("allUsersList");
-let latestUsers = [];
-let unreadPrivate = {}; // Track unread private messages
 
+// State
+let latestUsers = [];
+let unreadPrivate = {};
 let currentRoom = "public";
 let myId = null;
-let myGender = "male";
-let myNickname = "";
-let myAge = null;
 
-// Show modal and handle form
+// --- THEME/DARK MODE LOGIC ---
+function applyTheme(theme) {
+  if (theme === "dark") {
+    document.body.classList.add("dark-mode");
+    themeToggleBtn.textContent = "☀️";
+  } else {
+    document.body.classList.remove("dark-mode");
+    themeToggleBtn.textContent = "🌙";
+  }
+}
+
+themeToggleBtn.addEventListener("click", () => {
+  const isDarkMode = document.body.classList.contains("dark-mode");
+  const newTheme = isDarkMode ? "light" : "dark";
+  applyTheme(newTheme);
+  localStorage.setItem("chatTheme", newTheme);
+});
+
+// --- MAIN CHAT LOGIC ---
+
 function showUserModal() {
   userModal.style.display = "flex";
   nicknameInput.focus();
@@ -43,16 +62,12 @@ function showUserModal() {
       ageInput.style.borderColor = "#e75480";
       return;
     }
-    myGender = gender;
-    myNickname = nickname;
-    myAge = age;
     socket.emit("user info", { nickname, gender, age });
     userModal.style.display = "none";
     socket.emit("join room", "public");
   };
 }
 
-// Unique nickname error handler
 socket.on("nickname taken", () => {
   nicknameInput.style.borderColor = "#e11d48";
   nicknameInput.value = "";
@@ -74,7 +89,6 @@ form.addEventListener("submit", (e) => {
   }
 });
 
-// Always scroll messages to bottom on input focus (mobile fix)
 input.addEventListener("focus", () => {
   setTimeout(() => {
     messages.scrollTop = messages.scrollHeight;
@@ -88,7 +102,6 @@ function getNameColor(gender) {
   return gender === "female" ? "#e75480" : "#3b82f6";
 }
 
-// Add message to chat
 function addMessage(msg) {
   const item = document.createElement("div");
   item.classList.add("msg");
@@ -109,21 +122,13 @@ function addMessage(msg) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-// Message handler with unread notification logic
 socket.on("chat message", (msg) => {
-  // If it's a private message and I'm not in that private room, mark as unread
-  if (
-    msg.room !== "public" &&
-    currentRoom !== msg.room &&
-    msg.to === myId // Only mark as unread if I'm the recipient
-  ) {
-    const otherId = msg.id;
-    unreadPrivate[otherId] = true;
+  if (msg.room !== "public" && currentRoom !== msg.room && msg.to === myId) {
+    unreadPrivate[msg.id] = true;
     updateUserList();
   }
   if (msg.room === currentRoom) {
     addMessage(msg);
-    // Clear unread if in private room
     if (msg.room !== "public") {
       const otherId = msg.id === myId ? msg.to : msg.id;
       unreadPrivate[otherId] = false;
@@ -132,16 +137,13 @@ socket.on("chat message", (msg) => {
   }
 });
 
-// When joining a room, load its history
 socket.on("room history", (msgs) => {
   messages.innerHTML = "";
   msgs.forEach(addMessage);
 });
 
-// User list rendering with red dot for unread private messages
 function updateUserList() {
   userList.innerHTML = "";
-  // Public room button
   const publicBtn = document.createElement("div");
   publicBtn.className = "user";
   publicBtn.textContent = "🌐 Public Room";
@@ -180,12 +182,9 @@ socket.on("user list", (users) => {
   updateUserList();
 });
 
-// Show online users modal when clicking "Users" button (mobile)
 showUsersBtn.onclick = () => {
   if (window.innerWidth <= 768) {
     allUsersList.innerHTML = "";
-
-    // Add Public Room button at the top of modal
     const publicBtn = document.createElement("div");
     publicBtn.className = "user";
     publicBtn.style =
@@ -231,35 +230,31 @@ showUsersBtn.onclick = () => {
   }
 };
 
-// Hide all users modal when clicking outside (optional UX)
 allUsersModal.addEventListener("click", (e) => {
   if (e.target === allUsersModal) {
     allUsersModal.style.display = "none";
   }
 });
 
-// *** MOBILE KEYBOARD FIX ***
-// This function adjusts the viewport height when the virtual keyboard appears
+// --- MOBILE KEYBOARD & INITIALIZATION ---
 function adjustHeightForKeyboard() {
-  // We only run this on mobile devices
   if (window.innerWidth <= 768) {
-    // 1. Get the actual inner height of the window
     let vh = window.innerHeight * 0.01;
-    // 2. Set the value of --vh custom property to the root of the document
     document.documentElement.style.setProperty("--vh", `${vh}px`);
-
-    // 3. Ensure the message list scrolls to the bottom after the resize
     setTimeout(() => {
       messages.scrollTop = messages.scrollHeight;
     }, 150);
   }
 }
 
-// Listen for window resize events (which includes keyboard opening/closing)
 window.addEventListener("resize", adjustHeightForKeyboard);
 
-// Initial call to set the value when the page loads
 window.addEventListener("load", () => {
+  // Apply saved theme from localStorage
+  const savedTheme = localStorage.getItem("chatTheme") || "light";
+  applyTheme(savedTheme);
+
+  // Adjust for mobile keyboard
   adjustHeightForKeyboard();
   input.focus();
 });
